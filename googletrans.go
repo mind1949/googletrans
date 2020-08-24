@@ -62,27 +62,21 @@ type rawTranslated struct {
 }
 
 // Translator is responsible for translation
-type Translator interface {
-	Translate(TranslateParams) (Translated, error)
-	BulkTranslate(ctx context.Context, params <-chan TranslateParams) <-chan TranslatedResult
-	Detect(text string) (Detected, error)
-}
-
-type translator struct {
+type Translator struct {
 	serviceURL string
 	tkkCache   tkk.Cache
 }
 
 // New initializes a Translator
-func New(serviceURL string) Translator {
-	return &translator{
+func New(serviceURL string) *Translator {
+	return &Translator{
 		serviceURL: serviceURL,
 		tkkCache:   tkk.NewCache(serviceURL),
 	}
 }
 
 // Translate translates text from src language to dest language
-func (t *translator) Translate(params TranslateParams) (Translated, error) {
+func (t *Translator) Translate(params TranslateParams) (Translated, error) {
 	if params.Src == "" {
 		params.Src = "auto"
 	}
@@ -99,7 +93,7 @@ func (t *translator) Translate(params TranslateParams) (Translated, error) {
 }
 
 // BulkTranslate translates texts to dest language
-func (t *translator) BulkTranslate(ctx context.Context, params <-chan TranslateParams) <-chan TranslatedResult {
+func (t *Translator) BulkTranslate(ctx context.Context, params <-chan TranslateParams) <-chan TranslatedResult {
 	stream := make(chan TranslatedResult)
 
 	go func() {
@@ -122,7 +116,7 @@ func (t *translator) BulkTranslate(ctx context.Context, params <-chan TranslateP
 }
 
 // Detect detects text's language
-func (t *translator) Detect(text string) (Detected, error) {
+func (t *Translator) Detect(text string) (Detected, error) {
 	transData, err := t.do(TranslateParams{
 		Src:  "auto",
 		Dest: "en",
@@ -137,7 +131,7 @@ func (t *translator) Detect(text string) (Detected, error) {
 	}, nil
 }
 
-func (t *translator) do(params TranslateParams) (rawTranslated, error) {
+func (t *Translator) do(params TranslateParams) (rawTranslated, error) {
 	transURL, err := t.buildTransURL(params)
 	if err != nil {
 		return emptyRawTranslated, err
@@ -172,7 +166,7 @@ func (t *translator) do(params TranslateParams) (rawTranslated, error) {
 	return result, nil
 }
 
-func (t *translator) buildTransURL(params TranslateParams) (transURL string, err error) {
+func (t *Translator) buildTransURL(params TranslateParams) (transURL string, err error) {
 	tkk, err := t.tkkCache.Get()
 	if err != nil {
 		return "", err
@@ -214,7 +208,7 @@ func (t *translator) buildTransURL(params TranslateParams) (transURL string, err
 	return u.String(), nil
 }
 
-func (*translator) parseRawTranslated(data []byte) (result rawTranslated, err error) {
+func (*Translator) parseRawTranslated(data []byte) (result rawTranslated, err error) {
 	var s scanner.Scanner
 	s.Init(bytes.NewReader(data))
 	var (

@@ -5,7 +5,7 @@ import (
 )
 
 func TestDo(t *testing.T) {
-	clt := New(DefaultServiceURL).(*translator)
+	clt := New(DefaultServiceURL)
 	params := TranslateParams{
 		Src:  "auto",
 		Dest: "zh-CN",
