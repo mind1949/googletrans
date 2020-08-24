@@ -1,6 +1,8 @@
 package googletrans
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestDo(t *testing.T) {
 	clt := New(DefaultServiceURL).(*translator)
@@ -17,7 +19,7 @@ func TestDo(t *testing.T) {
 }
 
 func TestTranslate(t *testing.T) {
-	clt := New(DefaultServiceURL).(*translator)
+	clt := New(DefaultServiceURL)
 	params := TranslateParams{
 		Src:  "auto",
 		Dest: "zh-CN",
@@ -31,7 +33,7 @@ func TestTranslate(t *testing.T) {
 }
 
 func TestDetect(t *testing.T) {
-	clt := New(DefaultServiceURL).(*translator)
+	clt := New(DefaultServiceURL)
 	text := "Go is an open source programming language that makes it easy to build simple, reliable, and efficient software. "
 	detected, err := clt.Detect(text)
 	if err != nil {
