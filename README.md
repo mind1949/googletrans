@@ -1,7 +1,7 @@
 # Googletrans
 
 [![language](https://img.shields.io/badge/language-Golang-blue)](https://golang.org/)
-[![Documentation](https://godoc.org/github.com/mind1949/googletrans?status.svg)](https://pkg.go.dev/github.com/mind1949/googletrans?tab=doc)
+[![Documentation](https://godoc.org/github.com/mind1949/googletrans?status.svg)](https://godoc.org/github.com/mind1949/googletrans)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mind1949/googletrans)](https://goreportcard.com/report/github.com/mind1949/googletrans)
 
 Googletrans is a free and unlimited golang library that implemented Google Translate API.
