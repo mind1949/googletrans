@@ -27,7 +27,7 @@ var (
 
 // TranslateParams represents translate params
 type TranslateParams struct {
-	Src  string `json:"src"`  // source langauge (default: auto)
+	Src  string `json:"src"`  // source language (default: auto)
 	Dest string `json:"dest"` // destination language
 	Text string `json:"text"` // text for translating
 }
