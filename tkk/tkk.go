@@ -14,25 +14,50 @@ import (
 
 // Get gets tkk
 func Get() (string, error) {
-	return cache.get()
+	return defaultCache.Get()
 }
 
-const googleTransURL = "https://translate.google.cn"
+// Set sets google translation url
+func Set(googleTransURL string) {
+	defaultCache.Set(googleTransURL)
+}
+
+const defaultServiceURL = "https://translate.google.cn"
 
 var (
-	cache = &tkkCache{v: "0"}
+	defaultCache = NewCache(defaultServiceURL)
 
 	// ErrNotFound couldn't found tkk
-	ErrNotFound = errors.New("couldn't found tkk from " + googleTransURL)
+	ErrNotFound = errors.New("couldn't found tkk from google translation url")
 )
+
+// Cache is responsible for getting google translte tkk
+type Cache interface {
+	Set(googleTransURL string)
+	Get() (tkk string, err error)
+}
+
+// NewCache initializes a cache
+func NewCache(serviceURL string) Cache {
+	if serviceURL == "" {
+		serviceURL = defaultServiceURL
+	}
+	return &tkkCache{v: "0", u: serviceURL}
+}
 
 type tkkCache struct {
 	v string
 	m sync.RWMutex
+	u string // google translation url
 }
 
-// get gets tkk
-func (t *tkkCache) get() (string, error) {
+// Set sets google translation url
+func (t *tkkCache) Set(googleTransURL string) {
+	t.u = googleTransURL
+}
+
+// Get gets tkk
+func (t *tkkCache) Get() (string, error) {
 	now := math.Floor(float64(
 		time.Now().UnixNano() / 3600000),
 	)
@@ -44,7 +69,7 @@ func (t *tkkCache) get() (string, error) {
 		return t.read(), nil
 	}
 
-	resp, err := http.Get(googleTransURL)
+	resp, err := http.Get(t.u)
 	if err != nil {
 		return "", err
 	}
