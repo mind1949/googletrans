@@ -31,8 +31,7 @@ import (
 )
 
 func main() {
-	clt := googletrans.New(googletrans.DefaultServiceURL)
-	detected, err := clt.Detect("hello googletrans")
+	detected, err := googletrans.Detect("hello googletrans")
 	if err != nil {
 		panic(err)
 	}
@@ -54,13 +53,12 @@ import (
 )
 
 func main() {
-	clt := googletrans.New(googletrans.DefaultServiceURL)
 	params := googletrans.TranslateParams{
 		Src:  "auto",
 		Dest: language.SimplifiedChinese.String(),
 		Text: "Go is an open source programming language that makes it easy to build simple, reliable, and efficient software. ",
 	}
-	translated, err := clt.Translate(params)
+	translated, err := googletrans.Translate(params)
 	if err != nil {
 		panic(err)
 	}
@@ -101,8 +99,7 @@ func main() {
 		return params
 	}()
 
-	clt := googletrans.New(googletrans.DefaultServiceURL)
-	for translatedResult := range clt.BulkTranslate(context.Background(), params) {
+	for translatedResult := range googletrans.BulkTranslate(context.Background(), params) {
 		fmt.Printf("%+v\n", translatedResult)
 	}
 }

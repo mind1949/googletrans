@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -15,15 +16,36 @@ import (
 )
 
 const (
-	// DefaultServiceURL default google translation service url
-	DefaultServiceURL = "https://translate.google.cn"
+	defaultServiceURL = "https://translate.google.cn"
 )
 
 var (
 	emptyTranlated     = Translated{}
 	emptyDetected      = Detected{}
 	emptyRawTranslated = rawTranslated{}
+
+	defaultTranslator = New()
 )
+
+// Translate uses defaultTranslator to translate params.text
+func Translate(params TranslateParams) (Translated, error) {
+	return defaultTranslator.Translate(params)
+}
+
+// Detect uses defaultTranslator to detect language
+func Detect(text string) (Detected, error) {
+	return defaultTranslator.Detect(text)
+}
+
+// BulkTranslate uses defaultTranslator to bulk translate
+func BulkTranslate(ctx context.Context, params <-chan TranslateParams) <-chan TranslatedResult {
+	return defaultTranslator.BulkTranslate(ctx, params)
+}
+
+// Append appends serviceURLs to defaultTranslator's serviceURLs
+func Append(serviceURLs ...string) {
+	defaultTranslator.Append(serviceURLs...)
+}
 
 // TranslateParams represents translate params
 type TranslateParams struct {
@@ -63,15 +85,26 @@ type rawTranslated struct {
 
 // Translator is responsible for translation
 type Translator struct {
-	serviceURL string
-	tkkCache   tkk.Cache
+	serviceURLs []string
+	tkkCache    tkk.Cache
 }
 
 // New initializes a Translator
-func New(serviceURL string) *Translator {
+func New(serviceURLs ...string) *Translator {
+	var has bool
+	for i := 0; i < len(serviceURLs); i++ {
+		if serviceURLs[i] == defaultServiceURL {
+			has = true
+			break
+		}
+	}
+	if !has {
+		serviceURLs = append(serviceURLs, defaultServiceURL)
+	}
+
 	return &Translator{
-		serviceURL: serviceURL,
-		tkkCache:   tkk.NewCache(serviceURL),
+		serviceURLs: serviceURLs,
+		tkkCache:    tkk.NewCache(random(serviceURLs)),
 	}
 }
 
@@ -173,7 +206,7 @@ func (t *Translator) buildTransURL(params TranslateParams) (transURL string, err
 	}
 	tk, _ := tk.Get(params.Text, tkk)
 
-	u, err := url.Parse(t.serviceURL + "/translate_a/single")
+	u, err := url.Parse(t.randomServiceURL() + "/translate_a/single")
 	if err != nil {
 		return "", err
 	}
@@ -252,4 +285,18 @@ func (*Translator) parseRawTranslated(data []byte) (result rawTranslated, err er
 	}
 
 	return result, nil
+}
+
+// Append appends serviceURLS to  t's serviceURLs
+func (t *Translator) Append(serviceURLs ...string) {
+	t.serviceURLs = append(t.serviceURLs, serviceURLs...)
+}
+
+func (t *Translator) randomServiceURL() (serviceURL string) {
+	return random(t.serviceURLs)
+}
+
+func random(list []string) string {
+	i := rand.Intn(len(list))
+	return list[i]
 }

@@ -5,13 +5,12 @@ import (
 )
 
 func TestDo(t *testing.T) {
-	clt := New(DefaultServiceURL)
 	params := TranslateParams{
 		Src:  "auto",
 		Dest: "zh-CN",
 		Text: "Go is an open source programming language that makes it easy to build simple, reliable, and efficient software. ",
 	}
-	transData, err := clt.do(params)
+	transData, err := defaultTranslator.do(params)
 	if err != nil {
 		t.Error(err)
 	}
@@ -19,13 +18,12 @@ func TestDo(t *testing.T) {
 }
 
 func TestTranslate(t *testing.T) {
-	clt := New(DefaultServiceURL)
 	params := TranslateParams{
 		Src:  "auto",
 		Dest: "zh-CN",
 		Text: "Go is an open source programming language that makes it easy to build simple, reliable, and efficient software. ",
 	}
-	translated, err := clt.Translate(params)
+	translated, err := defaultTranslator.Translate(params)
 	if err != nil {
 		t.Error(err)
 	}
@@ -33,9 +31,8 @@ func TestTranslate(t *testing.T) {
 }
 
 func TestDetect(t *testing.T) {
-	clt := New(DefaultServiceURL)
 	text := "Go is an open source programming language that makes it easy to build simple, reliable, and efficient software. "
-	detected, err := clt.Detect(text)
+	detected, err := defaultTranslator.Detect(text)
 	if err != nil {
 		t.Error(err)
 	}
