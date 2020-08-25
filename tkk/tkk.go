@@ -59,13 +59,13 @@ func (t *tkkCache) Set(googleTransURL string) {
 // Get gets tkk
 func (t *tkkCache) Get() (string, error) {
 	now := math.Floor(float64(
-		time.Now().UnixNano() / 3600000),
+		time.Now().Unix() * 1000 / 3600000),
 	)
 	ttkf64, err := strconv.ParseFloat(t.read(), 64)
 	if err != nil {
 		return "", err
 	}
-	if now == ttkf64 {
+	if now == math.Floor(ttkf64) {
 		return t.read(), nil
 	}
 
