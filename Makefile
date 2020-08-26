@@ -9,3 +9,4 @@ test:
 	go test . -v
 bench:
 	go test tkk/* -bench=. -run=NONE
+	go test . -bench=. -run=NONE

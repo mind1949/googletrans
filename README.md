@@ -11,6 +11,7 @@ It's inspired by [py-googletrans](https://github.com/ssut/py-googletrans)
 * Auto language detection
 * Bulk translations
 * Customizable service URL
+* Auto update cookie
  
 # Installation
 
