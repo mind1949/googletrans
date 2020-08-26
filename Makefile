@@ -5,6 +5,7 @@ fmt:
 test:
 	go test tkk/* -v
 	go test tk/* -v
+	go test transcookie/* -v
 	go test . -v
 bench:
 	go test tkk/* -bench=. -run=NONE

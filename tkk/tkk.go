@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/mind1949/googletrans/transcookie"
 )
 
 // Get gets tkk
@@ -69,7 +71,16 @@ func (t *tkkCache) Get() (string, error) {
 		return t.read(), nil
 	}
 
-	resp, err := http.Get(t.u)
+	req, err := http.NewRequest(http.MethodGet, t.u, nil)
+	if err != nil {
+		return "", err
+	}
+	cookie, err := transcookie.Get(t.u)
+	if err != nil {
+		return "", err
+	}
+	req.AddCookie(&cookie)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}

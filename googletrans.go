@@ -3,16 +3,17 @@ package googletrans
 import (
 	"bytes"
 	"context"
-	"errors"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
 	"text/scanner"
+	"time"
 
 	"github.com/mind1949/googletrans/tk"
 	"github.com/mind1949/googletrans/tkk"
+	"github.com/mind1949/googletrans/transcookie"
 )
 
 const (
@@ -85,6 +86,7 @@ type rawTranslated struct {
 
 // Translator is responsible for translation
 type Translator struct {
+	clt         *http.Client
 	serviceURLs []string
 	tkkCache    tkk.Cache
 }
@@ -103,6 +105,7 @@ func New(serviceURLs ...string) *Translator {
 	}
 
 	return &Translator{
+		clt:         &http.Client{},
 		serviceURLs: serviceURLs,
 		tkkCache:    tkk.NewCache(random(serviceURLs)),
 	}
@@ -170,19 +173,34 @@ func (t *Translator) do(params TranslateParams) (rawTranslated, error) {
 		return emptyRawTranslated, err
 	}
 
-	clt := http.Client{}
-	req, err := http.NewRequest(http.MethodGet, transURL, nil)
+	req, err := http.NewRequest(http.MethodGet, transURL.String(), nil)
 	if err != nil {
 		return emptyRawTranslated, err
 	}
 
-	resp, err := clt.Do(req)
-	if err != nil {
-		return emptyRawTranslated, err
-	}
+	transService := transURL.Scheme + "://" + transURL.Hostname()
+	var resp *http.Response
+	for try := 0; try < 3; try++ {
+		cookie, err := transcookie.Get(transService)
+		if err != nil {
+			return emptyRawTranslated, err
+		}
+		req.AddCookie(&cookie)
+		resp, err = t.clt.Do(req)
+		if err != nil {
+			return emptyRawTranslated, err
+		}
 
-	if resp.StatusCode != http.StatusOK {
-		return emptyRawTranslated, errors.New("request status: " + resp.Status)
+		if resp.StatusCode == http.StatusOK {
+			break
+		}
+
+		if resp.StatusCode == http.StatusTooManyRequests {
+			_, err = transcookie.Update(transService, 3*time.Second)
+			if err != nil {
+				return emptyRawTranslated, err
+			}
+		}
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
@@ -199,16 +217,16 @@ func (t *Translator) do(params TranslateParams) (rawTranslated, error) {
 	return result, nil
 }
 
-func (t *Translator) buildTransURL(params TranslateParams) (transURL string, err error) {
+func (t *Translator) buildTransURL(params TranslateParams) (transURL *url.URL, err error) {
 	tkk, err := t.tkkCache.Get()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	tk, _ := tk.Get(params.Text, tkk)
 
 	u, err := url.Parse(t.randomServiceURL() + "/translate_a/single")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if params.Src == "" {
@@ -238,7 +256,7 @@ func (t *Translator) buildTransURL(params TranslateParams) (transURL string, err
 
 	u.RawQuery = values.Encode()
 
-	return u.String(), nil
+	return u, nil
 }
 
 func (*Translator) parseRawTranslated(data []byte) (result rawTranslated, err error) {
