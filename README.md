@@ -4,8 +4,9 @@
 [![Documentation](https://godoc.org/github.com/mind1949/googletrans?status.svg)](https://godoc.org/github.com/mind1949/googletrans)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mind1949/googletrans)](https://goreportcard.com/report/github.com/mind1949/googletrans)
 
-Googletrans is a free and unlimited golang library that implemented Google Translate API.
-It's inspired by [py-googletrans](https://github.com/ssut/py-googletrans)
+Concurrency-safe, free and unlimited golang library that implemented Google Translate API.
+
+Inspired by [py-googletrans](https://github.com/ssut/py-googletrans).
 
 # Features
 * Auto language detection

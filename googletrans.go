@@ -3,6 +3,7 @@ package googletrans
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -201,6 +202,9 @@ func (t *Translator) do(params TranslateParams) (rawTranslated, error) {
 				return emptyRawTranslated, err
 			}
 		}
+	}
+	if resp.StatusCode != http.StatusOK {
+		return emptyRawTranslated, fmt.Errorf("failed to get translation result, err: %s", resp.Status)
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
