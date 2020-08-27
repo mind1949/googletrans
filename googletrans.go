@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"text/scanner"
 	"time"
 
@@ -169,17 +170,12 @@ func (t *Translator) Detect(text string) (Detected, error) {
 }
 
 func (t *Translator) do(params TranslateParams) (rawTranslated, error) {
-	transURL, err := t.buildTransURL(params)
+	req, err := t.buildTransRequest(params)
 	if err != nil {
 		return emptyRawTranslated, err
 	}
 
-	req, err := http.NewRequest(http.MethodGet, transURL.String(), nil)
-	if err != nil {
-		return emptyRawTranslated, err
-	}
-
-	transService := transURL.Scheme + "://" + transURL.Hostname()
+	transService := req.URL.Scheme + "://" + req.URL.Hostname()
 	var resp *http.Response
 	for try := 0; try < 3; try++ {
 		cookie, err := transcookie.Get(transService)
@@ -221,7 +217,7 @@ func (t *Translator) do(params TranslateParams) (rawTranslated, error) {
 	return result, nil
 }
 
-func (t *Translator) buildTransURL(params TranslateParams) (transURL *url.URL, err error) {
+func (t *Translator) buildTransRequest(params TranslateParams) (request *http.Request, err error) {
 	tkk, err := t.tkkCache.Get()
 	if err != nil {
 		return nil, err
@@ -236,7 +232,7 @@ func (t *Translator) buildTransURL(params TranslateParams) (transURL *url.URL, e
 	if params.Src == "" {
 		params.Src = "auto"
 	}
-	values := url.Values{}
+	queries := url.Values{}
 	for k, v := range map[string]string{
 		"client": "webapp",
 		"sl":     params.Src,
@@ -248,19 +244,36 @@ func (t *Translator) buildTransURL(params TranslateParams) (transURL *url.URL, e
 		"ssel":   "0",
 		"tsel":   "0",
 		"kc":     "7",
-		"q":      params.Text,
 		"tk":     tk,
 	} {
-		values.Add(k, v)
+		queries.Add(k, v)
 	}
 	dts := []string{"at", "bd", "ex", "ld", "md", "qca", "rw", "rm", "ss", "t"}
 	for i := 0; i < len(dts); i++ {
-		values.Add("dt", dts[i])
+		queries.Add("dt", dts[i])
 	}
 
-	u.RawQuery = values.Encode()
+	q := url.Values{}
+	q.Add("q", params.Text)
 
-	return u, nil
+	// If the length of the url of the get request exceeds 2000, change to a post request
+	if len(u.String()+"?"+queries.Encode()+q.Encode()) >= 2000 {
+		u.RawQuery = queries.Encode()
+		request, err = http.NewRequest(http.MethodPost, u.String(), strings.NewReader(q.Encode()))
+		if err != nil {
+			return nil, err
+		}
+		request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	} else {
+		queries.Add("q", params.Text)
+		u.RawQuery = queries.Encode()
+		request, err = http.NewRequest(http.MethodGet, u.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return request, nil
 }
 
 func (*Translator) parseRawTranslated(data []byte) (result rawTranslated, err error) {
