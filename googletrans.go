@@ -282,24 +282,25 @@ func (*Translator) parseRawTranslated(data []byte) (result rawTranslated, err er
 	var s scanner.Scanner
 	s.Init(bytes.NewReader(data))
 	var (
-		coord = []int{-1}
+		coord       = []int{-1}
+		textBuilder strings.Builder
 	)
 	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
 		tokText := s.TokenText()
-		switch tokText {
-		case "[":
+		switch tok {
+		case '[':
 			coord[len(coord)-1]++
 			coord = append(coord, -1)
-		case "]":
+		case ']':
 			coord = coord[:len(coord)-1]
-		case ",":
+		case ',':
 			// no-op
 		default:
 			coord[len(coord)-1]++
 
 			if len(coord) == 4 && coord[1] == 0 && coord[3] == 0 {
 				if tokText != "null" {
-					result.translated.text += tokText[1 : len(tokText)-1]
+					textBuilder.WriteString(tokText[1 : len(tokText)-1])
 				}
 			}
 			if len(coord) == 4 && coord[0] == 0 && coord[1] == 0 && coord[2] == 1 && coord[3] == 2 {
@@ -320,6 +321,7 @@ func (*Translator) parseRawTranslated(data []byte) (result rawTranslated, err er
 			}
 		}
 	}
+	result.translated.text = textBuilder.String()
 
 	return result, nil
 }

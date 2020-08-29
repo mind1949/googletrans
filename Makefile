@@ -8,5 +8,5 @@ test:
 	go test transcookie/* -v
 	go test . -v
 bench:
-	go test tkk/* -bench=. -run=NONE
-	go test . -bench=. -run=NONE
+	go test tkk/* -bench=. -run=NONE -benchmem
+	go test . -bench=. -run=NONE -benchmem
