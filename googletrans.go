@@ -59,8 +59,9 @@ type TranslateParams struct {
 
 // Translated represents translated result
 type Translated struct {
-	Params TranslateParams `json:"params"`
-	Text   string          `json:"text"` // translated text
+	Params        TranslateParams `json:"params"`
+	Text          string          `json:"text"`          // translated text
+	Pronunciation string          `json:"pronunciation"` // pronunciation of translated text
 }
 
 // TranslatedResult represents a translated result with an error
@@ -125,8 +126,9 @@ func (t *Translator) Translate(params TranslateParams) (Translated, error) {
 	}
 
 	return Translated{
-		Params: params,
-		Text:   transData.translated.text,
+		Params:        params,
+		Text:          transData.translated.text,
+		Pronunciation: transData.translated.pronunciation,
 	}, nil
 }
 

@@ -19,7 +19,7 @@ var (
 )
 
 // Get gets cookie from defaultCookiesCache
-// for example: Get("https:://translate.google.com")
+// for example: Get("https://translate.google.com")
 func Get(serviceURL string) (http.Cookie, error) {
 	return defaultCookiesCache.get(serviceURL)
 }

@@ -1,18 +1,17 @@
 # Googletrans
-
 [![language](https://img.shields.io/badge/language-Golang-blue)](https://golang.org/)
 [![Documentation](https://godoc.org/github.com/mind1949/googletrans?status.svg)](https://godoc.org/github.com/mind1949/googletrans)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mind1949/googletrans)](https://goreportcard.com/report/github.com/mind1949/googletrans)
 
-Concurrency-safe, free and unlimited golang library that implemented Google Translate API.
+G文⚡️: Concurrency-safe, free and unlimited golang library that implemented Google Translate API.
 
 Inspired by [py-googletrans](https://github.com/ssut/py-googletrans).
 
 # Features
+* Out of the box
 * Auto language detection
 * Bulk translations
 * Customizable service URL
-* Auto update cookie
  
 # Installation
 
@@ -38,9 +37,12 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("%+v\n", detected)
+	format := "language: %q, confidence: %0.2f\n"
+	fmt.Printf(format, detected.Lang, detected.Confidence)
 }
 
+// output:
+// language: "en", cofidence: 1.00
 ```
 
 ## Translate
@@ -64,8 +66,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%+v\n", translated)
+	fmt.Printf("text: %q \npronunciation: %q", translated.Text, translated.Pronunciation)
 }
+
+// output:
+// text: "Go是一种开放源代码编程语言，可轻松构建简单，可靠且高效的软件。"
+// pronunciation: "Go shì yī zhǒng kāifàng yuán dàimǎ biānchéng yǔyán, kě qīngsōng gòujiàn jiǎndān, kěkào qiě gāoxiào de ruǎnjiàn."
 ```
 
 ## Bulk translate
@@ -101,8 +107,17 @@ func main() {
 		return params
 	}()
 
-	for translatedResult := range googletrans.BulkTranslate(context.Background(), params) {
-		fmt.Printf("%+v\n", translatedResult)
+	for transResult := range googletrans.BulkTranslate(context.Background(), params) {
+		if transResult.Err != nil {
+			panic(transResult.Err)
+		}
+		fmt.Printf("text: %q, pronunciation: %q\n", transResult.Text, transResult.Pronunciation)
 	}
 }
+
+// output:
+// text: "你好golang", pronunciation: "Nǐ hǎo golang"
+// text: "Go是一种开放源代码编程语言，可轻松构建简单，可靠且高效的软件。", pronunciation: "Go shì yī zhǒng kāifàng yuán dàimǎ biānchéng yǔyán, kě qīngsōng gòujiàn jiǎndān, kěkào qiě gāoxiào de ruǎnjiàn."
+// text: "Go编程语言是一个开放源代码项目，旨在提高程序员的生产力。", pronunciation: "Go biānchéng yǔyán shì yīgè kāifàng yuán dàimǎ xiàngmù, zhǐ zài tígāo chéngxù yuán de shēngchǎnlì."
+
 ```
