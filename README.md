@@ -42,7 +42,7 @@ func main() {
 }
 
 // output:
-// language: "en", cofidence: 1.00
+// language: "en", confidence: 1.00
 ```
 
 ## Translate
