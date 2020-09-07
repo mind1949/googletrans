@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"text/scanner"
 	"time"
 
@@ -40,9 +41,14 @@ func Detect(text string) (Detected, error) {
 	return defaultTranslator.Detect(text)
 }
 
-// BulkTranslate uses defaultTranslator to bulk translate
-func BulkTranslate(ctx context.Context, params <-chan TranslateParams) <-chan TranslatedResult {
-	return defaultTranslator.BulkTranslate(ctx, params)
+// BulkTranslate uses defaultTranslator to bulk translate with goroutines
+func BulkTranslate(params []TranslateParams) []TranslatedResult {
+	return defaultTranslator.BulkTranslate(params)
+}
+
+// BulkTranslatePipeline uses defaultTranslator to bulk translate with pipeline
+func BulkTranslatePipeline(ctx context.Context, params <-chan TranslateParams) <-chan TranslatedResult {
+	return defaultTranslator.BulkTranslatePipeline(ctx, params)
 }
 
 // Append appends serviceURLs to defaultTranslator's serviceURLs
@@ -132,8 +138,37 @@ func (t *Translator) Translate(params TranslateParams) (Translated, error) {
 	}, nil
 }
 
-// BulkTranslate translates texts to dest language
-func (t *Translator) BulkTranslate(ctx context.Context, params <-chan TranslateParams) <-chan TranslatedResult {
+// BulkTranslate translates texts to dest language with goroutines
+func (t *Translator) BulkTranslate(params []TranslateParams) []TranslatedResult {
+	// Final results store
+	results := []TranslatedResult{}
+
+	// Translate to chan with goroutines
+	var wg sync.WaitGroup
+	resultsChan := make(chan TranslatedResult, len(params))
+	for _, p := range params {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, p TranslateParams, r chan<- TranslatedResult) {
+			defer wg.Done()
+			result := TranslatedResult{}
+			result.Translated, result.Err = t.Translate(p)
+			r <- result
+		}(&wg, p, resultsChan)
+	}
+	wg.Wait()
+	close(resultsChan)
+
+	// Extract from chan
+	for r := range resultsChan {
+		results = append(results, r)
+	}
+
+	// Return
+	return results
+}
+
+// BulkTranslatePipeline translates texts to dest language with pipeline approach
+func (t *Translator) BulkTranslatePipeline(ctx context.Context, params <-chan TranslateParams) <-chan TranslatedResult {
 	stream := make(chan TranslatedResult)
 
 	go func() {

@@ -15,6 +15,28 @@ func BenchmarkTranslate(b *testing.B) {
 	}
 }
 
+func benchmarkBulkTranslate(b *testing.B, input []string) {
+	params := []TranslateParams{}
+	for _, input := range input {
+		params = append(params, TranslateParams{
+			Src:  "auto",
+			Dest: "zh-CN",
+			Text: input,
+		})
+	}
+	for i := 0; i < b.N; i++ {
+		BulkTranslate(params)
+	}
+}
+
+func BenchmarkBulkTranslateSmall(b *testing.B) {
+	benchmarkBulkTranslate(b, smallTestSlice)
+}
+
+func BenchmarkBulkTranslateLarge(b *testing.B) {
+	benchmarkBulkTranslate(b, largeTestSlice)
+}
+
 func BenchmarkParseRawTranslated(b *testing.B) {
 	data := []byte(`[[["Go中的字符串，字节，符文和字符\n\n","Strings, bytes, runes and characters in Go\n\n",null,null,3,null,null,[[]
 	]
