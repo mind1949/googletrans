@@ -72,3 +72,17 @@ func main() {
 // text: "Go是一种开放源代码编程语言，可轻松构建简单，可靠且高效的软件。"
 // pronunciation: "Go shì yī zhǒng kāifàng yuán dàimǎ biānchéng yǔyán, kě qīngsōng gòujiàn jiǎndān, kěkào qiě gāoxiào de ruǎnjiàn."
 ```
+
+## Customize service URLs
+```golang
+package main
+
+import "github.com/mind1949/googletrans"
+
+func main() {
+	serviceURLs := []string{
+		"https://translate.google.com/",
+		"https://translate.google.pl/"}
+	googletrans.Append(serviceURLs...)
+}
+```
