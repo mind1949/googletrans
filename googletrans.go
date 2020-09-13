@@ -2,7 +2,6 @@ package googletrans
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -40,11 +39,6 @@ func Detect(text string) (Detected, error) {
 	return defaultTranslator.Detect(text)
 }
 
-// BulkTranslate uses defaultTranslator to bulk translate
-func BulkTranslate(ctx context.Context, params <-chan TranslateParams) <-chan TranslatedResult {
-	return defaultTranslator.BulkTranslate(ctx, params)
-}
-
 // Append appends serviceURLs to defaultTranslator's serviceURLs
 func Append(serviceURLs ...string) {
 	defaultTranslator.Append(serviceURLs...)
@@ -62,12 +56,6 @@ type Translated struct {
 	Params        TranslateParams `json:"params"`
 	Text          string          `json:"text"`          // translated text
 	Pronunciation string          `json:"pronunciation"` // pronunciation of translated text
-}
-
-// TranslatedResult represents a translated result with an error
-type TranslatedResult struct {
-	Translated
-	Err error `json:"err"`
 }
 
 // Detected represents language detection result
@@ -130,29 +118,6 @@ func (t *Translator) Translate(params TranslateParams) (Translated, error) {
 		Text:          transData.translated.text,
 		Pronunciation: transData.translated.pronunciation,
 	}, nil
-}
-
-// BulkTranslate translates texts to dest language
-func (t *Translator) BulkTranslate(ctx context.Context, params <-chan TranslateParams) <-chan TranslatedResult {
-	stream := make(chan TranslatedResult)
-
-	go func() {
-		defer close(stream)
-
-		for param := range params {
-			result := TranslatedResult{}
-			result.Translated, result.Err = t.Translate(param)
-
-			select {
-			case <-ctx.Done():
-				result.Err = ctx.Err()
-				stream <- result
-				return
-			case stream <- result:
-			}
-		}
-	}()
-	return stream
 }
 
 // Detect detects text's language
@@ -286,7 +251,6 @@ func (*Translator) parseRawTranslated(data []byte) (result rawTranslated, err er
 		textBuilder strings.Builder
 	)
 	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
-		tokText := s.TokenText()
 		switch tok {
 		case '[':
 			coord[len(coord)-1]++
@@ -296,6 +260,7 @@ func (*Translator) parseRawTranslated(data []byte) (result rawTranslated, err er
 		case ',':
 			// no-op
 		default:
+			tokText := s.TokenText()
 			coord[len(coord)-1]++
 
 			if len(coord) == 4 && coord[1] == 0 && coord[3] == 0 {

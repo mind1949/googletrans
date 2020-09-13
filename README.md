@@ -10,7 +10,6 @@ Inspired by [py-googletrans](https://github.com/ssut/py-googletrans).
 # Features
 * Out of the box
 * Auto language detection
-* Bulk translations
 * Customizable service URL
  
 # Installation
@@ -41,7 +40,7 @@ func main() {
 	fmt.Printf(format, detected.Lang, detected.Confidence)
 }
 
-// output:
+// Output:
 // language: "en", confidence: 1.00
 ```
 
@@ -69,55 +68,7 @@ func main() {
 	fmt.Printf("text: %q \npronunciation: %q", translated.Text, translated.Pronunciation)
 }
 
-// output:
+// Output:
 // text: "Go是一种开放源代码编程语言，可轻松构建简单，可靠且高效的软件。"
 // pronunciation: "Go shì yī zhǒng kāifàng yuán dàimǎ biānchéng yǔyán, kě qīngsōng gòujiàn jiǎndān, kěkào qiě gāoxiào de ruǎnjiàn."
-```
-
-## Bulk translate
-```golang
-package main
-
-import (
-	"context"
-	"fmt"
-
-	"github.com/mind1949/googletrans"
-	"golang.org/x/text/language"
-)
-
-func main() {
-	params := func() <-chan googletrans.TranslateParams {
-		params := make(chan googletrans.TranslateParams)
-		go func() {
-			defer close(params)
-			texts := []string{
-				"Hello golang",
-				"Go is an open source programming language that makes it easy to build simple, reliable, and efficient software.",
-				"The Go programming language is an open source project to make programmers more productive.",
-			}
-			for i := 0; i < len(texts); i++ {
-				params <- googletrans.TranslateParams{
-					Src:  "auto",
-					Dest: language.SimplifiedChinese.String(),
-					Text: texts[i],
-				}
-			}
-		}()
-		return params
-	}()
-
-	for transResult := range googletrans.BulkTranslate(context.Background(), params) {
-		if transResult.Err != nil {
-			panic(transResult.Err)
-		}
-		fmt.Printf("text: %q, pronunciation: %q\n", transResult.Text, transResult.Pronunciation)
-	}
-}
-
-// output:
-// text: "你好golang", pronunciation: "Nǐ hǎo golang"
-// text: "Go是一种开放源代码编程语言，可轻松构建简单，可靠且高效的软件。", pronunciation: "Go shì yī zhǒng kāifàng yuán dàimǎ biānchéng yǔyán, kě qīngsōng gòujiàn jiǎndān, kěkào qiě gāoxiào de ruǎnjiàn."
-// text: "Go编程语言是一个开放源代码项目，旨在提高程序员的生产力。", pronunciation: "Go biānchéng yǔyán shì yīgè kāifàng yuán dàimǎ xiàngmù, zhǐ zài tígāo chéngxù yuán de shēngchǎnlì."
-
 ```
