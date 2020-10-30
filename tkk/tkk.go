@@ -102,9 +102,10 @@ func (t *tkkCache) Get() (string, error) {
 
 func (t *tkkCache) read() string {
 	t.m.RLock()
+	v := t.v
 	t.m.RUnlock()
 
-	return t.v
+	return v
 }
 
 func (t *tkkCache) update(v string) string {
