@@ -3,6 +3,7 @@ package tkk
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -10,8 +11,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/mind1949/googletrans/transcookie"
 )
 
 // Get gets tkk
@@ -31,6 +30,8 @@ var (
 
 	// ErrNotFound couldn't found tkk
 	ErrNotFound = errors.New("couldn't found tkk from google translation url")
+
+	tkkRegexp = regexp.MustCompile(`tkk:'(\d+\.\d+)'`)
 )
 
 // Cache is responsible for getting google translte tkk
@@ -60,44 +61,11 @@ func (t *tkkCache) Set(googleTransURL string) {
 
 // Get gets tkk
 func (t *tkkCache) Get() (string, error) {
-	now := math.Floor(float64(
-		time.Now().Unix() * 1000 / 3600000),
-	)
-	ttkf64, err := strconv.ParseFloat(t.read(), 64)
-	if err != nil {
-		return "", err
-	}
-	if now == math.Floor(ttkf64) {
+	if t.isvalid() {
 		return t.read(), nil
 	}
 
-	req, err := http.NewRequest(http.MethodGet, t.u, nil)
-	if err != nil {
-		return "", err
-	}
-	cookie, err := transcookie.Get(t.u)
-	if err != nil {
-		return "", err
-	}
-	req.AddCookie(&cookie)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	data := string(body)
-	r := regexp.MustCompile(`tkk:'(\d+\.\d+)'`)
-	if r.MatchString(data) {
-		v := r.FindStringSubmatch(data)[1]
-		return t.update(v), nil
-	}
-
-	return "", ErrNotFound
+	return t.update()
 }
 
 func (t *tkkCache) read() string {
@@ -108,10 +76,50 @@ func (t *tkkCache) read() string {
 	return v
 }
 
-func (t *tkkCache) update(v string) string {
-	t.m.Lock()
-	t.v = v
-	t.m.Unlock()
+func (t *tkkCache) isvalid() bool {
+	now := math.Floor(float64(
+		time.Now().Unix() * 1000 / 3600000),
+	)
+	ttkf64, err := strconv.ParseFloat(t.read(), 64)
+	if err != nil {
+		return false
+	}
+	if now != math.Floor(ttkf64) {
+		return false
+	}
 
-	return t.v
+	return true
+}
+
+func (t *tkkCache) update() (string, error) {
+	t.m.Lock()
+	defer t.m.Unlock()
+
+	req, err := http.NewRequest(http.MethodGet, t.u, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		format := "couldn't found tkk from google translation url, status code: %d"
+		err = fmt.Errorf(format, resp.StatusCode)
+		return "", err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	data := string(body)
+	if !tkkRegexp.MatchString(data) {
+		return "", ErrNotFound
+	}
+
+	t.v = tkkRegexp.FindStringSubmatch(data)[1]
+	return t.v, nil
 }
