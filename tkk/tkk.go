@@ -50,7 +50,7 @@ func NewCache(serviceURL string) Cache {
 	token <- struct{}{}
 	cache := &tkkCache{
 		v: "0",
-		u: defaultServiceURL,
+		u: serviceURL,
 
 		m:     &sync.RWMutex{},
 		cond:  sync.NewCond(&sync.Mutex{}),
